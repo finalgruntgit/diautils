@@ -39,8 +39,8 @@ class Distrib:
         self.upper_bound = sample[-1]
         self.bounds = (self.lower_bound, self.upper_bound)
         self.num_sample = len(sample)
-        self.prob_step = 1 / (self.num_sample + 1)
-        self.sample_probs = np.arange(1, self.num_sample + 1) * self.prob_step
+        self.prob_step = 1 / (self.num_sample + 3)
+        self.sample_probs = np.arange(1, self.num_sample + 3) * self.prob_step
         if normal is None:
             self.normal = norm.ppf(self.sample_probs)
         else:
@@ -65,10 +65,10 @@ class Distrib:
         dbound = ubound - lbound
         np.where(dbound == 0, 1, dbound)
         alphas = (data - lbound) / dbound
-        return pos, spos, alphas, data
+        return spos, pos, alphas, data
 
     def probs(self, data):
-        pos, spos, alphas, data = self.interpolate(data)
+        spos, pos, alphas, data = self.interpolate(data)
         return self.sample_probs[spos] + alphas * self.prob_step, data
 
     def interpolate_exact(self, data):
@@ -76,7 +76,7 @@ class Distrib:
         return norm.ppf(probs), data
 
     def interpolate_linear(self, data):
-        pos, spos, alphas, data = self.interpolate(data)
+        spos, pos, alphas, data = self.interpolate(data)
         lbound_normal = self.normal[spos]
         ubound_normal = self.normal[pos]
         dbound_normal = ubound_normal - lbound_normal
