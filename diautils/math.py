@@ -10,10 +10,18 @@ def sigexp(v):
     return sv * (np.exp(sv * v) - 1)
 
 
-def znorm(v, mean=None, std=None):
+def z_norm(v, mean=None, std=None):
     if mean is None:
         mean = v.mean()
     if std is None:
         std = v.std()
     np.where(std == 0, 1, std)
     return (v - mean) / std
+
+
+def siglog_norm(v, mean=None, std=None):
+    return siglog(z_norm(v, mean, std))
+
+
+def tanh_siglog_norm(v, mean=None, std=None):
+    return np.tanh(siglog_norm(v, mean, std))
