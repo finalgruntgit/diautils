@@ -23,20 +23,33 @@ def z_norm(v, mean=None, std=None):
     return (v - mean) / std
 
 
+def z_denorm(v, mean=None, std=None):
+    return v * std + mean
+
+
 def siglog_norm(v, mean=None, std=None):
     return siglog(z_norm(v, mean, std))
 
 
-def tanh_siglog_norm(v, mean=None, std=None):
-    return np.tanh(siglog_norm(v, mean, std))
+def siglog_denorm(v, mean=None, std=None):
+    return z_denorm(sigexp(v), mean, std)
+
+
+def tanh_siglog_norm(v, mean=None, std=None, alpha=1.0):
+    return np.tanh(alpha * siglog_norm(v, mean, std))
+
+
+def tanh_siglog_denorm(v, mean=None, std=None, alpha=1.0):
+    return siglog_denorm(np.arctanh(v) / alpha, mean, std)
 
 
 class Distrib:
 
-    def __init__(self, sample, pre_norm, normal=None, mean=None, std=None):
+    def __init__(self, sample, pre_norm, normal=None, mean=None, std=None, alpha=1.0):
         self.sample = sample
         self.lower_bound = sample[0]
         self.upper_bound = sample[-1]
+        self.max_bound = max(self.upper_bound, abs(self.lower_bound))
         self.bounds = (self.lower_bound, self.upper_bound)
         self.num_sample = len(sample)
         self.prob_step = 1 / (self.num_sample + 1)
@@ -48,16 +61,26 @@ class Distrib:
         self.pre_norm = pre_norm
         self.mean = mean
         self.std = std
+        self.alpha = alpha
+
+    def normalize(self, data):
+        if self.pre_norm is not None:
+            data = tanh_siglog_norm(data, self.mean, self.std, self.alpha)
+        return data
+
+    def denormalize(self, data):
+        if self.pre_norm is not None:
+            data = tanh_siglog_denorm(data, self.mean, self.std, self.alpha)
+        return data
 
     def search(self, data):
-        if self.pre_norm is not None:
-            data = tanh_siglog_norm(data, self.mean, self.std)
+        data = self.normalize(data)
         pos = np.empty(len(data), np.int32)
         for i, v in enumerate(data):
             pos[i] = bisect_left(self.sample, v)
         return pos, data
 
-    def interpolate(self, data):
+    def probs(self, data):
         pos, data = self.search(data)
         spos = pos - 1
         lbound = self.sample[spos]
@@ -65,22 +88,24 @@ class Distrib:
         dbound = ubound - lbound
         np.where(dbound == 0, 1, dbound)
         alphas = (data - lbound) / dbound
-        return spos, pos, alphas, data
-
-    def probs(self, data):
-        spos, pos, alphas, data = self.interpolate(data)
         return self.sample_probs[spos] + alphas * self.prob_step, data
 
-    def interpolate_exact(self, data):
+    def interpolate(self, data):
         probs, data = self.probs(data)
         return norm.ppf(probs), data
 
-    def interpolate_linear(self, data):
-        spos, pos, alphas, data = self.interpolate(data)
-        lbound_normal = self.normal[spos]
-        ubound_normal = self.normal[pos]
-        dbound_normal = ubound_normal - lbound_normal
-        return self.normal[spos] + alphas * dbound_normal, data
+    def interpolate_inv(self, data):
+        probs = norm.cdf(data)
+        pos_r = probs / self.prob_step
+        pos = np.floor(pos_r).astype(int)
+        alphas = pos_r - pos
+        spos = pos - 1
+        lbound = self.sample[spos]
+        ubound = self.sample[pos]
+        dbound = ubound - lbound
+        data_normed = lbound + alphas * dbound
+        data = self.denormalize(data_normed)
+        return data, data_normed
 
     def meta(self):
         return {
@@ -91,12 +116,13 @@ class Distrib:
             'lower_bound': self.lower_bound,
             'upper_bound': self.upper_bound,
             'prob_step': self.prob_step,
+            'alpha': self.alpha
         }
 
 
 class DistribMgr:
 
-    def create(self, data, num_sample=-1, bounds=None):
+    def create(self, data, num_sample=-1, bounds=None, alpha=1.0):
         if 0 < num_sample < len(data):
             sample = np.random.choice(data, num_sample)
         else:
@@ -106,7 +132,7 @@ class DistribMgr:
         mu, sigma = sample.mean(), sample.std()
         if bounds is None:
             pre_norm = True
-            sample = tanh_siglog_norm(sample, mu, sigma)
+            sample = tanh_siglog_norm(sample, mu, sigma, alpha)
             bounds = (-1.0, 1.0)
         else:
             pre_norm = False
@@ -114,9 +140,9 @@ class DistribMgr:
         bounded_sample[0] = bounds[0]
         bounded_sample[-1] = bounds[1]
         bounded_sample[1:-1] = sample
-        return Distrib(bounded_sample, pre_norm, mean=mu, std=sigma)
+        return Distrib(bounded_sample, pre_norm, mean=mu, std=sigma, alpha=alpha)
 
-    def normalize(self, data):
+    def as_normal(self, data):
         num_data = len(data)
         lin = np.arange(1, num_data + 1) / (num_data + 1)
         lin_normal = norm.ppf(lin)
@@ -135,4 +161,4 @@ class DistribMgr:
         sample = help.load_npy(help.join(dir_data, '{}_sample'.format(name)))
         normal = help.load_npy(help.join(dir_data, '{}_normal'.format(name)))
         meta = to_conf().load(help.join(dir_data, '{}_meta.json'.format(name)))
-        return Distrib(sample, meta['pre_norm'], normal=normal, mean=meta['mean'], std=meta['std'])
+        return Distrib(sample, meta['pre_norm'], normal=normal, mean=meta['mean'], std=meta['std'], alpha=meta['alpha', 1.0])
