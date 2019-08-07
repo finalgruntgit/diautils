@@ -39,8 +39,8 @@ class Distrib:
         self.upper_bound = sample[-1]
         self.bounds = (self.lower_bound, self.upper_bound)
         self.num_sample = len(sample)
-        self.prob_step = 1 / (self.num_sample + 3)
-        self.sample_probs = np.arange(1, self.num_sample + 3) * self.prob_step
+        self.prob_step = 1 / (self.num_sample + 1)
+        self.sample_probs = np.arange(1, self.num_sample + 1) * self.prob_step
         if normal is None:
             self.normal = norm.ppf(self.sample_probs)
         else:
