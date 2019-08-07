@@ -94,9 +94,6 @@ class Distrib:
 
 class DistribMgr:
 
-    def __init__(self, dir_data='data'):
-        self.dir_data = dir_data
-
     def create(self, data, num_sample=-1, bounds=None):
         if 0 < num_sample < len(data):
             sample = np.random.choice(data, num_sample)
@@ -126,14 +123,14 @@ class DistribMgr:
         data_normal[ss] = lin_normal
         return data_normal
 
-    def save(self, distrib, name):
-        help.save_npy(help.join(self.dir_data, '{}_sample'.format(name)), distrib.sample)
-        help.save_npy(help.join(self.dir_data, '{}_normal'.format(name)), distrib.normal)
-        help.save_json_pretty(help.join(self.dir_data, '{}_meta.json'.format(name)), distrib.meta())
+    def save(self, distrib, name, dir_data='data'):
+        help.save_npy(help.join(dir_data, '{}_sample'.format(name)), distrib.sample)
+        help.save_npy(help.join(dir_data, '{}_normal'.format(name)), distrib.normal)
+        help.save_json_pretty(help.join(dir_data, '{}_meta.json'.format(name)), distrib.meta())
         return distrib
 
-    def load(self, name):
-        sample = help.load_npy(help.join(self.dir_data, '{}_sample'.format(name)))
-        normal = help.load_npy(help.join(self.dir_data, '{}_normal'.format(name)))
-        meta = to_conf().load(help.join(self.dir_data, '{}_meta.json'.format(name)))
+    def load(self, name, dir_data='data'):
+        sample = help.load_npy(help.join(dir_data, '{}_sample'.format(name)))
+        normal = help.load_npy(help.join(dir_data, '{}_normal'.format(name)))
+        meta = to_conf().load(help.join(dir_data, '{}_meta.json'.format(name)))
         return Distrib(sample, meta['pre_norm'], normal=normal, mean=meta['mean'], std=meta['std'])
