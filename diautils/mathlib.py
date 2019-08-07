@@ -1,4 +1,5 @@
 import numpy as np
+from diautils import help
 from bisect import bisect_left
 from scipy.stats import norm
 
