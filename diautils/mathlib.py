@@ -142,14 +142,29 @@ class DistribMgr:
         bounded_sample[1:-1] = sample
         return Distrib(bounded_sample, pre_norm, mean=mu, std=sigma, alpha=alpha)
 
-    def as_normal(self, data):
+    def as_normal_1d(self, data):
         num_data = len(data)
         lin = np.arange(1, num_data + 1) / (num_data + 1)
+        data_normal = np.empty_like(data, np.float)
         lin_normal = norm.ppf(lin)
         ss = np.argsort(data)
-        data_normal = np.empty(num_data)
         data_normal[ss] = lin_normal
         return data_normal
+
+    def as_normal(self, data, flatten=False):
+        if not isinstance(data, np.ndarray):
+            data = np.array(data)
+        if len(data.shape) == 1:
+            return self.as_normal_1d(data)
+        else:
+            data_flat = np.reshape(data, (-1, data.shape[-1]))
+            if flatten:
+                data_normal = self.as_normal_1d(data_flat)
+            else:
+                data_normal = np.empty_like(data_flat, np.float)
+                for i, vs in enumerate(data_flat):
+                    data_normal[i] = self.as_normal_1d(vs)
+            return np.reshape(data_normal, data.shape)
 
     def save(self, distrib, name, dir_data='data'):
         help.save_npy(help.join(dir_data, '{}_sample'.format(name)), distrib.sample)
