@@ -16,9 +16,9 @@ def sigexp(v):
 
 def z_norm(v, mean=None, std=None):
     if mean is None:
-        mean = v.mean()
+        mean = v.mean(axis=0)
     if std is None:
-        std = v.std()
+        std = v.std(axis=0)
     np.where(std == 0, 1, std)
     return (v - mean) / std
 
