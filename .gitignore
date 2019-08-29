@@ -4,4 +4,5 @@ diautils/__pycache__/
 diautils.egg-info
 dist
 .idea
+.cache
 
