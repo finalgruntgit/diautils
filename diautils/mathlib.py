@@ -389,3 +389,10 @@ class DistribMgr:
             return DistribNd(sample, meta['pre_norm'], normal=normal, mean=meta['mean'], std=meta['std'], alpha=meta['alpha', 1.0])
         else:
             raise Exception('Unknown distribution type: {}'.format(dist_type))
+
+
+def bjorck(m, steps=1):
+    ident = np.eye(len(m.T))
+    for i in range(steps):
+        np.matmul(m, (ident + 0.5 * (ident - np.matmul(m.T, m))), m)
+    return m
