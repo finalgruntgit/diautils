@@ -91,14 +91,14 @@ class Distrib1d:
     def normalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm is not None:
+        if self.pre_norm:
             data = tanh_siglog_norm(data, self.mean, self.std, self.alpha)
         return data
 
     def denormalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm is not None:
+        if self.pre_norm:
             data = tanh_siglog_denorm(np.clip(data, -1 + 1e-15, 1 - 1e-15), self.mean, self.std, self.alpha)
         return data
 
@@ -199,14 +199,14 @@ class DistribNd:
     def normalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm is not None:
+        if self.pre_norm:
             data = tanh_siglog_norm(data, self.mean, self.std, self.alpha)
         return data
 
     def denormalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm is not None:
+        if self.pre_norm:
             data = tanh_siglog_denorm(np.clip(data, -1 + 1e-15, 1 - 1e-15), self.mean, self.std, self.alpha)
         return data
 
@@ -391,8 +391,8 @@ class DistribMgr:
             raise Exception('Unknown distribution type: {}'.format(dist_type))
 
 
-def bjorck(m, steps=1):
+def bjorck1(m, steps):
     ident = np.eye(len(m.T))
     for i in range(steps):
-        np.matmul(m, (ident + 0.5 * (ident - np.matmul(m.T, m))), m)
+        m = np.matmul(m, ident + 0.5 * (ident - np.matmul(m.T, m)))
     return m

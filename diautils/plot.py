@@ -21,24 +21,24 @@ def plot_save(filename, close=True):
         plt.close()
 
 
-def plot_confusion_matrix(cm):
+def plot_confusion_matrix(cm, title='', xlabel='Prediction', ylabel='Truth'):
     cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=2)
-
-    figure = plt.figure(figsize=(8, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title('matrice de confusion')
+    if title:
+        plt.title(title)
     plt.colorbar()
-
     plt.tight_layout()
-    plt.ylabel('True Label')
-    plt.xlabel('Prediction Label')
-    return figure
+    if xlabel:
+        plt.xlabel(xlabel)
+    if ylabel:
+        plt.ylabel('True Label')
 
 
-def plot_to_img_bytes(figure):
+def plot_to_img_bytes():
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
-    plt.close(figure)
+    plt.close()
+    buf.seek(0)
     return buf
 
 

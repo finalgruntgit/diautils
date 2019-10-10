@@ -50,6 +50,9 @@ class Dataset:
     def __lt__(self, other):
         return self.data.__lt__(other)
 
+    def flatten(self):
+        return self.data.flatten()
+
     def pipe(self):
         return pipe(self.data)
 
@@ -117,8 +120,12 @@ class DatasetBuilder:
         help.save_json_pretty(file_meta, meta)
         return Dataset(self.name, self.type, self.field, data, self.dir_base, dir_name, dir_version, dir_type, file_data, file_meta)
 
-    def create_from(self, data, dtype=None, mode='w+', meta_suffix='.meta'):
+    def create_like(self, data, dtype=None, mode='w+', meta_suffix='.meta'):
         dataset = self.create(data.shape, data.dtype if dtype is None else dtype, mode, meta_suffix)
+        return dataset
+
+    def create_from(self, data, dtype=None, mode='w+', meta_suffix='.meta'):
+        dataset = self.create_like(data, dtype, mode, meta_suffix)
         dataset[:] = data
         return dataset
 
