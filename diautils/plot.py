@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 from matplotlib import cm
 import numpy as np
 import io
@@ -21,7 +22,8 @@ def plot_save(filename, close=True):
         plt.close()
 
 
-def plot_confusion_matrix(cm, title='', xlabel='Prediction', ylabel='Truth'):
+def plot_confusion_matrix(truth, pred, title='', xlabel='Prediction', ylabel='Truth'):
+    cm = confusion_matrix(truth, pred)
     cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=2)
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     if title:
