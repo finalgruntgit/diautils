@@ -24,7 +24,7 @@ def plot_save(filename, close=True):
 
 def plot_confusion_matrix(truth, pred, title='', xlabel='Prediction', ylabel='Truth'):
     cm = confusion_matrix(truth, pred)
-    cm = np.around(cm.astype('float') / np.max(1, cm.sum(axis=1)[:, np.newaxis]), decimals=2)
+    cm = np.around(cm.astype('float') / np.maximum(1, cm.sum(axis=1)[:, np.newaxis]), decimals=2)
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     if title:
         plt.title(title)
