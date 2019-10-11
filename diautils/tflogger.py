@@ -1,6 +1,5 @@
 import tensorflow as tf
-from diautils.plot import *
-
+import numpy as np
 
 class TfLogger:
 
@@ -51,18 +50,6 @@ class TfLogger:
     def log_scalar(self, tag, value, step):
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
         return self.log(summary, step)
-
-    def log_image_bytes(self, tag, value, step):
-        img_sum = tf.Summary.Image(encoded_image_string=value)
-        summary = tf.Summary(value=[tf.Summary.Value(tag=tag, image=img_sum)])
-        return self.log(summary, step)
-
-    def log_plot(self, tag, step):
-        return self.log_image_bytes(tag, plot_to_img_bytes().getvalue(), step)
-
-    def log_cm(self, tag, truth, pred, step, title='', xlabel='Prediction', ylabel='Truth'):
-        plot_confusion_matrix(truth, pred, title, xlabel, ylabel)
-        return self.log_plot(tag, step)
 
     def flush(self):
         self.writer.flush()

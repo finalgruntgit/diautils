@@ -24,11 +24,11 @@ def z_norm(v, mean=None, std=None):
         return (v - mean) / std
     else:
         if mean is None:
-            mean = v.mean(axis=-2)
+            mean = v.mean(axis=-1)
         if std is None:
-            std = v.std(axis=-2)
+            std = v.std(axis=-1)
         np.where(std == 0, 1, std)
-        return (v - np.expand_dims(mean, -2)) / np.expand_dims(std, -2)
+        return ((v.T - mean) / std).T
 
 
 def z_denorm(v, mean=None, std=None):
@@ -91,14 +91,14 @@ class Distrib1d:
     def normalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm:
+        if self.pre_norm is not None:
             data = tanh_siglog_norm(data, self.mean, self.std, self.alpha)
         return data
 
     def denormalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm:
+        if self.pre_norm is not None:
             data = tanh_siglog_denorm(np.clip(data, -1 + 1e-15, 1 - 1e-15), self.mean, self.std, self.alpha)
         return data
 
@@ -199,14 +199,14 @@ class DistribNd:
     def normalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm:
+        if self.pre_norm is not None:
             data = tanh_siglog_norm(data, self.mean, self.std, self.alpha)
         return data
 
     def denormalize(self, data):
         if not isinstance(data, np.ndarray):
             data = np.array(data)
-        if self.pre_norm:
+        if self.pre_norm is not None:
             data = tanh_siglog_denorm(np.clip(data, -1 + 1e-15, 1 - 1e-15), self.mean, self.std, self.alpha)
         return data
 
@@ -389,10 +389,3 @@ class DistribMgr:
             return DistribNd(sample, meta['pre_norm'], normal=normal, mean=meta['mean'], std=meta['std'], alpha=meta['alpha', 1.0])
         else:
             raise Exception('Unknown distribution type: {}'.format(dist_type))
-
-
-def bjorck1(m, steps):
-    ident = np.eye(len(m.T))
-    for i in range(steps):
-        m = np.matmul(m, ident + 0.5 * (ident - np.matmul(m.T, m)))
-    return m
