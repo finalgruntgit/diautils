@@ -615,6 +615,10 @@ def dtype2str(dtype):
         return 'float32'
     elif dtype == np.float64:
         return 'float64'
+    elif dtype == np.byte:
+        return 'byte'
+    elif dtype == np.ubyte:
+        return 'ubyte'
     else:
         raise Exception('Unknown type: ', dtype)
 
@@ -650,6 +654,10 @@ def str2dtype(dtype):
         return np.float32
     elif dtype == 'float64':
         return np.float64
+    elif dtype == 'byte':
+        return np.byte
+    elif dtype == 'ubyte':
+        return np.ubyte
     else:
         raise Exception('Unknown type: ', dtype)
 

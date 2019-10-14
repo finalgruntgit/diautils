@@ -92,7 +92,7 @@ class Dataset:
 
     def create(self, shape, dtype=np.float64, mode='w+'):
         if isinstance(shape, int):
-            self.shape = (shape,)
+            self.shape = (shape, )
         else:
             self.shape = tuple(int(v) for v in shape)
         self.dtype = dtype
@@ -100,7 +100,7 @@ class Dataset:
         self.data = np.memmap(self.file_data, self.dtype, shape=self.shape, mode=mode)
         self.meta = to_conf({
             'type': help.dtype2str(self.dtype),
-            'shape': shape
+            'shape': list(self.shape)
         })
         self.meta.save(self.file_meta)
         return self
@@ -110,6 +110,9 @@ class Dataset:
 
     def create_from(self, data, dtype=None, mode='w+'):
         return self.create(data.shape, data.dtype if dtype is None else dtype, mode).set(data)
+
+    def flatten(self):
+        return self.data.flatten()
 
 
 def ds_init(name, dir='', meta_suffix='meta'):
