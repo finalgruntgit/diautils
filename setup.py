@@ -13,6 +13,7 @@ setup(name='diautils',
             'numba',
             'airspeed',
             'matplotlib',
-            'sklearn'
+            'sklearn',
+            'sortedcontainers'
       ]
 )
