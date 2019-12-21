@@ -299,6 +299,11 @@ class StreamNode:
             return self
         return self.attach(EachPipe(self.pipe, fc_map))
 
+    def yielder(self, class_yielder):
+        if class_yielder is None:
+            return self
+        return self.attach(YielderPipe(self.pipe, class_yielder))
+
     def batch(self, num):
         assert num > 0
         return self.attach(BatchPipe(self.pipe, num))
@@ -815,6 +820,61 @@ class ArrayPipe(Pipe):
 
     def create(self, _):
         return ArrayPipeIterator(self.data)
+
+
+###########
+# YIELDER #
+###########
+
+class BasicYielder:
+
+    def __init__(self):
+        self.queue = cols.deque()
+
+    def fill(self):
+        raise NotImplementedError
+
+    def extract(self, v):
+        raise NotImplementedError
+
+
+class YielderPipeIterator(ChildPipeIterator):
+
+    def __init__(self, ite, yielder):
+        super().__init__(ite)
+        self.yielder = yielder
+
+    def one(self):
+        while True:
+            try:
+                return self.yielder.queue.popleft()
+            except IndexError:
+                try:
+                    self.yielder.fill()
+                except StopIteration:
+                    self.yielder.extract(self.ite.one())
+
+    def many(self, num):
+        out = []
+        while len(out) < num:
+            try:
+                out.append(self.one())
+            except StopIteration:
+                if not len(out):
+                    raise
+                else:
+                    break
+        return out
+
+
+class YielderPipe(ChildPipe):
+
+    def __init__(self, parent, class_yielder):
+        super().__init__(parent)
+        self.class_yielder = class_yielder
+
+    def create(self, input):
+        return YielderPipeIterator(self.parent.create(input), self.class_yielder())
 
 
 #######

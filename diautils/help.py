@@ -143,8 +143,14 @@ def join(*paths):
     return os.path.join(paths[0], *paths[1:])
 
 
-def listdir(path):
-    return os.listdir(path)
+def listdir(path, fullpath=False, sort=True):
+    if fullpath:
+        filenames = [join(path, filename) for filename in os.listdir(path)]
+    else:
+        filenames = list(os.listdir(path))
+    if sort:
+        filenames = sorted(filenames)
+    return filenames
 
 
 def isfile(filename):
