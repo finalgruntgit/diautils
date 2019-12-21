@@ -7,6 +7,7 @@ import fcntl
 import gzip
 import inspect
 import json
+import math
 import multiprocessing as mp
 import numba as na
 import numpy as np
@@ -906,3 +907,13 @@ class SharedMtBool(object):
 
 def sleep(delay):
     time.sleep(delay)
+
+
+def human_readable(v, precision=1):
+    vf = float(v)
+    millnames = ['', 'k', 'M', 'G', 'T']
+    idx = max(0, min(len(millnames) - 1, int(math.floor(0 if vf == 0 else math.log10(abs(vf)) / 3))))
+    if idx == 0:
+        return v
+    else:
+        return '{}{}'.format('{{:.{}f}}'.format(precision).format(v / 10 ** (3 * idx)).rstrip('0'), millnames[idx])
