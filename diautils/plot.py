@@ -68,7 +68,7 @@ def create_colormap(name='tab20', num_color=12):
 
 class GraphLayout:
 
-    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Greens', edge_linewidth=2, show_arrows=False):
+    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
         self.g = g
         self.pos = pos
         self.nodes = nodes
@@ -98,7 +98,7 @@ class GraphLayout:
         return self
 
 
-def create_graph_layout(nodes, edges, directed=True, type='spring', iterations=100, node_labels=None, node_cmap='Blues', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Greens', edge_linewidth=2, show_arrows=False):
+def create_graph_layout(nodes, edges, directed=True, type='spring', iterations=100, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
     if directed:
         g = nx.DiGraph()
     else:
