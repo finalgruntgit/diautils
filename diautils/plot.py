@@ -25,7 +25,6 @@ def plot_save(filename, close=True):
 def plot_confusion_matrix(truth, pred, classes=None, title='', xlabel='Prediction', ylabel='Truth', cmap_name='Blues', show_colorbar=False, relative=False, show_ratio=True, ratio_precision=2, threshold=0.5):
     cm = confusion_matrix(truth, pred)
     cm_normed = cm.astype(np.float32) / cm.sum(axis=1)[:, None]
-    print(cm_normed)
     if classes is None:
         classes = np.arange(max(cm.shape[0], cm.shape[1]))
     if relative:
