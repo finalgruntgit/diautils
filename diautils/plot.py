@@ -22,13 +22,30 @@ def plot_save(filename, close=True):
         plt.close()
 
 
-def plot_confusion_matrix(truth, pred, title='', xlabel='Prediction', ylabel='Truth'):
+def plot_confusion_matrix(truth, pred, classes=None, title='', xlabel='Prediction', ylabel='Truth', cmap_name='Blues', show_colorbar=False, relative=False, show_ratio=True, ratio_precision=2, threshold=0.5):
     cm = confusion_matrix(truth, pred)
-    cm = np.around(cm.astype('float') / np.maximum(1, cm.sum(axis=1)[:, np.newaxis]), decimals=2)
-    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    cm_normed = cm.astype(np.float32) / cm.sum(axis=1)[:, None]
+    print(cm_normed)
+    if classes is None:
+        classes = np.arange(max(cm.shape[0], cm.shape[1]))
+    if relative:
+        plt.imshow(cm_normed, interpolation='nearest', cmap=plt.get_cmap(cmap_name))
+    else:
+        plt.imshow(cm_normed, interpolation='nearest', cmap=plt.get_cmap(cmap_name), vmin=0.0, vmax=1.0)
     if title:
         plt.title(title)
-    plt.colorbar()
+    if show_colorbar:
+        plt.colorbar()
+    if show_ratio:
+        fmt = '{{}}\n({{:.{}f}})'.format(ratio_precision)
+    else:
+        fmt = '{}'
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            plt.text(j, i, fmt.format(cm[i, j], cm_normed[i, j]), color='white' if cm_normed[i, j] >= threshold else 'black', horizontalalignment='center', verticalalignment='center')
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
     plt.tight_layout()
     if xlabel:
         plt.xlabel(xlabel)
