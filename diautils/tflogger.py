@@ -60,7 +60,7 @@ class TfLogger:
     def log_plot(self, tag, step):
         return self.log_image_bytes(tag, plot_to_img_bytes().getvalue(), step)
 
-    def log_cm(self, truth, pred, tag, step, classes=None, title='', xlabel='Prediction', ylabel='Truth', cmap_name='Blues', show_colorbar=False, relative=False, show_ratio=True, ratio_precision=2, threshold=0.5):
+    def log_cm(self, tag, step, truth, pred, classes=None, title='', xlabel='Prediction', ylabel='Truth', cmap_name='Blues', show_colorbar=False, relative=False, show_ratio=True, ratio_precision=2, threshold=0.5):
         plot_confusion_matrix(truth, pred, classes, title, xlabel, ylabel, cmap_name, show_colorbar, relative, show_ratio, ratio_precision, threshold)
         return self.log_plot(tag, step)
 
