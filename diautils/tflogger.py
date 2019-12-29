@@ -64,6 +64,10 @@ class TfLogger:
         plot_confusion_matrix(truth, pred, classes, title, xlabel, ylabel, cmap_name, show_colorbar, relative, show_ratio, ratio_precision, threshold)
         return self.log_plot(tag, step)
 
+    def log_graph(self, tag, layout, step, node_weights=None, edge_weights=None):
+        layout.plot(node_weights, edge_weights)
+        return self.log_plot(tag, step)
+
     def flush(self):
         self.writer.flush()
         return self

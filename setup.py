@@ -14,6 +14,7 @@ setup(name='diautils',
             'airspeed',
             'matplotlib',
             'sklearn',
-            'sortedcontainers'
+            'sortedcontainers',
+            'networkx',
       ]
 )
