@@ -103,6 +103,10 @@ def create_graph_layout(nodes, edges, directed=True, type='spring', iterations=1
         g = nx.DiGraph()
     else:
         g = nx.Graph()
+    if isinstance(nodes, np.ndarray):
+        nodes = nodes.tolist()
+    elif isinstance(nodes, int):
+        nodes = list(range(nodes))
     for v in nodes:
         g.add_node(v)
     for edge in edges:
