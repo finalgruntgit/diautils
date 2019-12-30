@@ -13,6 +13,7 @@ import numba as na
 import numpy as np
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -917,3 +918,19 @@ def human_readable(v, precision=1):
         return v
     else:
         return '{}{}'.format('{{:.{}f}}'.format(precision).format(v / 10 ** (3 * idx)).rstrip('0'), millnames[idx])
+
+
+class SigHandler:
+
+    def __init__(self, signals=(signal.SIGTERM,)):
+        self.signals = signals
+        for signal in signals:
+            self.register(signal)
+        self.ok = True
+
+    def register(self, sig):
+        signal.signal(sig, self.on_signal)
+        return self
+
+    def on_signal(self, sig_number, frame):
+        self.ok = False
