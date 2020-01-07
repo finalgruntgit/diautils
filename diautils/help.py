@@ -922,7 +922,7 @@ def human_readable(v, precision=1):
 
 class SigHandler:
 
-    def __init__(self, signals=(signal.SIGTERM, signal.SIGINT, signal.SIGKILL)):
+    def __init__(self, signals=(signal.SIGTERM, signal.SIGINT)):
         self.signals = signals
         for signal in signals:
             self.register(signal)
@@ -933,5 +933,5 @@ class SigHandler:
         return self
 
     def on_signal(self, sig_number, frame):
-        print('Received signal: {}'.format(sig_number))
+        # print('Received signal: {}'.format(sig_number))
         self.ok = False

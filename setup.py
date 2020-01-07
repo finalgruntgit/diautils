@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='diautils',
-      version='1.4.0',
+      version='1.5.0',
       description='ML Utils',
       author='Eric Renault',
       author_email='eric.renaul.info@gmail.com',
@@ -12,7 +12,7 @@ setup(name='diautils',
             'numpy',
             'numba',
             'airspeed',
-            'matplotlib',
+            'matplotlib==3.1.0',
             'sklearn',
             'sortedcontainers',
             'networkx',
