@@ -1,12 +1,12 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='diautils',
-      version='1.5.0',
+      version='1.6.0',
       description='ML Utils',
       author='Eric Renault',
       author_email='eric.renaul.info@gmail.com',
       license='MIT',
-      packages=['diautils'],
+      packages=find_packages(),
       zip_safe=False,
       install_requires=[
             'numpy',
@@ -16,5 +16,6 @@ setup(name='diautils',
             'sklearn',
             'sortedcontainers',
             'networkx',
+            'pillow'
       ]
 )

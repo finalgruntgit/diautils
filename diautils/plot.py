@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 from matplotlib import cm
+from PIL import Image
 import numpy as np
 import networkx as nx
 import io
@@ -59,6 +60,14 @@ def plot_to_img_bytes():
     plt.close()
     buf.seek(0)
     return buf
+
+
+def plot_to_img_np():
+    return np.array(Image.open(plot_to_img_bytes()))
+
+
+def plot_dims():
+    return plt.get_current_fig_manager().canvas.get_width_height()
 
 
 def create_colormap(name='tab20', num_color=12):
