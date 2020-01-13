@@ -75,6 +75,41 @@ def create_colormap(name='tab20', num_color=12):
     return cmap(np.linspace(0, 1, num_color))
 
 
+def plot_parameters(v, normed=True):
+    if len(v.shape) == 1:
+        l = int(np.sqrt(v.shape[0]))
+        if np.square(l) < v.shape[0]:
+            l += 1
+        if normed:
+            v_min = np.min(v)
+            v_max = np.max(v)
+            if v_max == v_min:
+                d = 1.0
+            else:
+                d = v_max - v_min
+            v = (v - v_min) / d
+        img = np.zeros((l * l, 3))
+        img[:v.shape[0], 0] = 1.0 - v
+        img[:v.shape[0], 1] = v
+        img = img.reshape((l, l, 3))
+        plt.imshow(img)
+    elif len(v.shape) == 2:
+        if normed:
+            v_min = np.min(v)
+            v_max = np.max(v)
+            if v_max == v_min:
+                d = 1.0
+            else:
+                d = v_max - v_min
+            v = (v - v_min) / d
+        img = np.zeros(v.shape + (3,))
+        img[:, :, 0] = 1.0 - v
+        img[:, :, 1] = v
+        plt.imshow(img)
+    else:
+        plot_parameters(v.flatten())
+
+
 class GraphLayout:
 
     def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
@@ -94,7 +129,8 @@ class GraphLayout:
 
     def plot(self, node_weights=None, edge_weights=None):
         if node_weights is None:
-            nx.draw_networkx_nodes(self.g, self.pos, nodelist=self.nodes, cmap=self.node_cmap, vmin=0.0, vmax=1.0, node_color=np.repeat(0.5, len(self.nodes)), node_size=0.5 * (self.node_size_min + self.node_size_max), linewidths=self.node_linewidth, edgecolors='black')
+            nx.draw_networkx_nodes(self.g, self.pos, nodelist=self.nodes, cmap=self.node_cmap, vmin=0.0, vmax=1.0, node_color=np.repeat(0.5, len(self.nodes)), node_size=0.5 * (self.node_size_min + self.node_size_max),
+                                   linewidths=self.node_linewidth, edgecolors='black')
         else:
             nx.draw_networkx_nodes(self.g, self.pos, nodelist=self.nodes, cmap=self.node_cmap, vmin=0.0, vmax=1.0, node_color=node_weights, node_size=self.node_size_min + self.node_size_max * node_weights, linewidths=1, edgecolors='black')
         nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_color='black', arrows=False, width=self.edge_linewidth + 0.5)

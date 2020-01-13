@@ -6,12 +6,12 @@ from scipy.stats import norm
 
 
 def siglog(v):
-    return np.sign(v) * np.log(1 + np.abs(v))
+    return np.sign(v) * np.log(1.0 + np.abs(v))
 
 
 def sigexp(v):
     sv = np.sign(v)
-    return sv * (np.exp(sv * v) - 1)
+    return sv * (np.exp(sv * v) - 1.0)
 
 
 def z_norm(v, mean=None, std=None):
