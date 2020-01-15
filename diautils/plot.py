@@ -5,6 +5,7 @@ from PIL import Image
 import numpy as np
 import networkx as nx
 import io
+from scipy.stats import norm
 
 
 def plot_fs():
@@ -75,6 +76,12 @@ def create_colormap(name='tab20', num_color=12):
     return cmap(np.linspace(0, 1, num_color))
 
 
+def plot_gaussian(mean=0, std=1.0, scale=1.0, num_point=1024):
+    xs = np.linspace(mean - 3 * std, mean + 3 * std, num_point)
+    ys = norm.pdf(xs) * scale
+    plt.plot(xs, ys)
+
+
 def plot_parameters(v, normed=True):
     if len(v.shape) == 1:
         l = int(np.sqrt(v.shape[0]))
@@ -112,7 +119,7 @@ def plot_parameters(v, normed=True):
 
 class GraphLayout:
 
-    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
+    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False, has_edge_border=False):
         self.g = g
         self.pos = pos
         self.nodes = nodes
@@ -126,6 +133,7 @@ class GraphLayout:
         self.edge_linewidth = edge_linewidth
         self.show_arrows = show_arrows
         self.node_labels = None if node_labels is None else dict((v, node_labels[i]) for i, v in enumerate(self.nodes))
+        self.has_edge_border = has_edge_border
 
     def plot(self, node_weights=None, edge_weights=None):
         if node_weights is None:
@@ -133,7 +141,8 @@ class GraphLayout:
                                    linewidths=self.node_linewidth, edgecolors='black')
         else:
             nx.draw_networkx_nodes(self.g, self.pos, nodelist=self.nodes, cmap=self.node_cmap, vmin=0.0, vmax=1.0, node_color=node_weights, node_size=self.node_size_min + self.node_size_max * node_weights, linewidths=1, edgecolors='black')
-        nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_color='black', arrows=False, width=self.edge_linewidth + 0.5)
+        if self.has_edge_border:
+            nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_color='black', arrows=False, width=self.edge_linewidth + 0.5)
         if edge_weights is None:
             nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_cmap=self.edge_cmap, edge_vmin=0.0, edge_vmax=1.0, edge_color=np.repeat(0.5, len(self.edges)), arrows=self.show_arrows, width=self.edge_linewidth)
         else:
@@ -143,7 +152,7 @@ class GraphLayout:
         return self
 
 
-def create_graph_layout(nodes, edges, directed=True, type='spring', iterations=100, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
+def create_graph_layout(nodes, edges, directed=True, type='spring', pos=None, iterations=100, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
     if directed:
         g = nx.DiGraph()
     else:
@@ -156,10 +165,12 @@ def create_graph_layout(nodes, edges, directed=True, type='spring', iterations=1
         g.add_node(v)
     for edge in edges:
         g.add_edge(*edge)
-    if type == 'spring':
-        pos = nx.spring_layout(g, iterations=iterations)
-    elif type == 'kawai':
-        pos = nx.kamada_kawai_layout(g)
-    else:
-        raise Exception('Unknown graph layout type: {}'.format(type))
+    if pos is None:
+        if type == 'spring':
+            pos = nx.spring_layout(g, iterations=iterations)
+        elif type == 'kawai':
+            pos = nx.kamada_kawai_layout(g)
+        else:
+            raise Exception('Unknown graph layout type: {}'.format(type))
     return GraphLayout(g, pos, nodes, edges, node_labels, node_cmap, node_size_min, node_size_max, node_linewidth, edge_cmap, edge_linewidth, show_arrows)
+
