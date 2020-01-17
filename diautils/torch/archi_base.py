@@ -1,6 +1,7 @@
 from diautils import help
 import torch
 import torch.nn as nn
+import numpy as np
 
 
 class Flatten(nn.Module):
@@ -30,26 +31,14 @@ class ZNormalizer(nn.Module):
         else:
             self.register_buffer('mean', torch.zeros(self.output_shape))
             self.register_buffer('std', torch.ones(self.output_shape))
-        self.register_buffer('beta_power', torch.tensor(1.0))
-        self.register_buffer('ratio', torch.tensor(1.0))
+        self.register_buffer('beta_power', torch.tensor(1.0).double())
         self.disc = self.epsilon + torch.sqrt(self.std)
-
-    def to(self, *args, **kwargs):
-        super().to(*args, **kwargs)
-        if len(args) == 1 and isinstance(args[0], torch.device):
-            device = args[0]
-            self.mean = self.mean.to(device)
-            self.std = self.std.to(device)
-            self.beta_power = self.beta_power.to(device)
-            self.ratio = self.ratio.to(device)
-            self.disc = self.disc.to(device)
-        return self
 
     def forward(self, v, idx=None):
         if self.training:
             with torch.no_grad():
                 self.beta_power *= (1.0 - self.beta)
-                ratio = self.beta / (1.0 - self.beta_power)
+                ratio = (self.beta / torch.clamp(1.0 - self.beta_power, min=self.beta)).float()
                 if idx is None:
                     v_ref = v
                 else:
@@ -110,13 +99,13 @@ class BaseArchi(nn.Module):
         return Flatten()
 
     def znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
-        return ZNormalizer(input_shape, axis, beta, epsilon).to(self.device)
+        return ZNormalizer(input_shape, axis, beta, epsilon)
 
     def siglog_znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
-        return SiglogZNormalizer(input_shape, axis, beta, epsilon).to(self.device)
+        return SiglogZNormalizer(input_shape, axis, beta, epsilon)
 
     def tanh_siglog_znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
-        return TanhSiglogZNormalizer(input_shape, axis, beta, epsilon).to(self.device)
+        return TanhSiglogZNormalizer(input_shape, axis, beta, epsilon)
 
     def dense(self, input_size, output_size, bias=True):
         layer = nn.Linear(input_size, output_size, bias)
@@ -126,7 +115,7 @@ class BaseArchi(nn.Module):
         return layer
 
     def embedding(self, num_class, embedding_size):
-        embedding = nn.Embedding(num_class, embedding_size).to(self.device)
+        embedding = nn.Embedding(num_class, embedding_size)
         nn.init.xavier_uniform_(embedding.weight)
         return embedding
 
@@ -139,4 +128,4 @@ class BaseArchi(nn.Module):
         return self
 
     def lrelu(self, negative_slope=0.2, in_place=False):
-        return nn.LeakyReLU(negative_slope, in_place).to(self.device)
+        return nn.LeakyReLU(negative_slope, in_place)
