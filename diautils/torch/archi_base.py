@@ -10,6 +10,16 @@ class Flatten(nn.Module):
         return input.view((input.shape[0], -1))
 
 
+class Reshape(nn.Module):
+
+    def __init__(self, shape_out):
+        super().__init__()
+        self.shape_out = shape_out
+
+    def forward(self, input):
+        return input.view(self.shape_out)
+
+
 class ZNormalizer(nn.Module):
 
     def __init__(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
@@ -32,7 +42,7 @@ class ZNormalizer(nn.Module):
             self.register_buffer('mean', torch.zeros(self.output_shape))
             self.register_buffer('std', torch.ones(self.output_shape))
         self.register_buffer('beta_power', torch.tensor(1.0).double())
-        self.disc = self.epsilon + torch.sqrt(self.std)
+        self.disc = None
 
     def forward(self, v, idx=None):
         if self.training:
@@ -50,6 +60,8 @@ class ZNormalizer(nn.Module):
                     self.mean = (1.0 - ratio) * self.mean + ratio * v_ref.mean(self.axis).view(self.output_shape)
                     self.std = (1.0 - ratio) * self.std + ratio * ((v_ref - self.mean) ** 2).mean(self.axis).view(self.output_shape)
                 self.disc = self.epsilon + torch.sqrt(self.std)
+        elif self.disc is None:
+            self.disc = self.epsilon + torch.sqrt(self.std)
         return (v - self.mean) / self.disc
 
 
@@ -97,6 +109,9 @@ class BaseArchi(nn.Module):
 
     def flatten(self):
         return Flatten()
+
+    def reshape(self, shape_out):
+        return Reshape(shape_out)
 
     def znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
         return ZNormalizer(input_shape, axis, beta, epsilon)

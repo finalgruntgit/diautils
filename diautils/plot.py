@@ -119,7 +119,7 @@ def plot_parameters(v, normed=True):
 
 class GraphLayout:
 
-    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False, has_edge_border=False):
+    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10.0, node_size_max=140.0, node_linewidth=1.0, edge_cmap='Blues', edge_linewidth=2.0, show_arrows=False, has_edge_border=False, variable_edge_width=False):
         self.g = g
         self.pos = pos
         self.nodes = nodes
@@ -134,6 +134,7 @@ class GraphLayout:
         self.show_arrows = show_arrows
         self.node_labels = None if node_labels is None else dict((v, node_labels[i]) for i, v in enumerate(self.nodes))
         self.has_edge_border = has_edge_border
+        self.variable_edge_width = variable_edge_width
 
     def plot(self, node_weights=None, edge_weights=None):
         if node_weights is None:
@@ -145,6 +146,8 @@ class GraphLayout:
             nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_color='black', arrows=False, width=self.edge_linewidth + 0.5)
         if edge_weights is None:
             nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_cmap=self.edge_cmap, edge_vmin=0.0, edge_vmax=1.0, edge_color=np.repeat(0.5, len(self.edges)), arrows=self.show_arrows, width=self.edge_linewidth)
+        elif self.variable_edge_width:
+            nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_cmap=self.edge_cmap, edge_vmin=0.0, edge_vmax=1.0, edge_color=edge_weights, arrows=self.show_arrows, width=self.edge_linewidth * edge_weights)
         else:
             nx.draw_networkx_edges(self.g, self.pos, edgelist=self.edges, edge_cmap=self.edge_cmap, edge_vmin=0.0, edge_vmax=1.0, edge_color=edge_weights, arrows=self.show_arrows, width=self.edge_linewidth)
         if self.node_labels is not None:
@@ -152,7 +155,7 @@ class GraphLayout:
         return self
 
 
-def create_graph_layout(nodes, edges, directed=True, type='spring', pos=None, iterations=100, node_labels=None, node_cmap='Greens', node_size_min=10, node_size_max=140, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2, show_arrows=False):
+def create_graph_layout(nodes, edges, directed=True, type='spring', pos=None, iterations=100, node_labels=None, node_cmap='Greens', node_size_min=10.0, node_size_max=140.0, node_linewidth=1, edge_cmap='Blues', edge_linewidth=2.0, show_arrows=False, has_edge_border=False, variable_edge_width=False):
     if directed:
         g = nx.DiGraph()
     else:
@@ -172,5 +175,5 @@ def create_graph_layout(nodes, edges, directed=True, type='spring', pos=None, it
             pos = nx.kamada_kawai_layout(g)
         else:
             raise Exception('Unknown graph layout type: {}'.format(type))
-    return GraphLayout(g, pos, nodes, edges, node_labels, node_cmap, node_size_min, node_size_max, node_linewidth, edge_cmap, edge_linewidth, show_arrows)
+    return GraphLayout(g, pos, nodes, edges, node_labels, node_cmap, node_size_min, node_size_max, node_linewidth, edge_cmap, edge_linewidth, show_arrows, has_edge_border, variable_edge_width)
 
