@@ -19,7 +19,6 @@ class Flatten(nn.Module):
         return input.view((input.shape[0], -1))
 
 
-<<<<<<< HEAD
 class Reshape(nn.Module):
 
     def __init__(self, shape_out):
@@ -28,7 +27,8 @@ class Reshape(nn.Module):
 
     def forward(self, input):
         return input.view(self.shape_out)
-=======
+
+
 class BackPropControlFunction(torch.autograd.Function):
 
     @staticmethod
@@ -44,7 +44,6 @@ class BackPropControlModule(nn.Module):
 
     def forward(self, v):
         return BackPropControlFunction.apply(v)
->>>>>>> 95c5ac715012a0c62578110ee49c2757e6bc5b31
 
 
 class ZNormalizer(nn.Module):
@@ -170,5 +169,5 @@ class BaseArchi(nn.Module):
     def lrelu(self, negative_slope=0.2, in_place=False):
         return nn.LeakyReLU(negative_slope, in_place)
 
-    def backprop_control():
+    def backprop_control(self):
         return BackPropControlModule()
