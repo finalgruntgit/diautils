@@ -119,7 +119,7 @@ def plot_parameters(v, normed=True):
 
 class GraphLayout:
 
-    def __init__(self, g, pos, nodes, edges, node_labels=None, node_cmap='Greens', node_size_min=10.0, node_size_max=140.0, node_linewidth=1.0, edge_cmap='Blues', edge_linewidth=2.0, show_arrows=False, has_edge_border=False, variable_edge_width=False):
+    def __init__(self, g, pos, nodes=None, edges=None, node_labels=None, node_cmap='Greens', node_size_min=10.0, node_size_max=140.0, node_linewidth=1.0, edge_cmap='Blues', edge_linewidth=2.0, show_arrows=False, has_edge_border=False, variable_edge_width=False):
         self.g = g
         self.pos = pos
         self.nodes = nodes

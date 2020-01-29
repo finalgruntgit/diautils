@@ -4,12 +4,22 @@ import torch.nn as nn
 import numpy as np
 
 
+def siglog(v):
+    return v.sign() * torch.log(1 + v.abs())
+
+
+def sigexp(v):
+    sv = v.sign()
+    return sv * (torch.exp(sv * v) - 1)
+
+
 class Flatten(nn.Module):
 
     def forward(self, input):
         return input.view((input.shape[0], -1))
 
 
+<<<<<<< HEAD
 class Reshape(nn.Module):
 
     def __init__(self, shape_out):
@@ -18,6 +28,23 @@ class Reshape(nn.Module):
 
     def forward(self, input):
         return input.view(self.shape_out)
+=======
+class BackPropControlFunction(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, input):
+        return input
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return siglog(grad_output)
+
+
+class BackPropControlModule(nn.Module):
+
+    def forward(self, v):
+        return BackPropControlFunction.apply(v)
+>>>>>>> 95c5ac715012a0c62578110ee49c2757e6bc5b31
 
 
 class ZNormalizer(nn.Module):
@@ -26,7 +53,9 @@ class ZNormalizer(nn.Module):
         super().__init__()
         self.input_shape = input_shape
         self.axis = axis
-        if input_shape is not None and (isinstance(input_shape, tuple) or isinstance(input_shape, list)) and len(input_shape) > 1 and axis is not None and ((not isinstance(axis, tuple) and not isinstance(axis, list)) or len(axis) < len(input_shape)):
+        if input_shape is not None and (isinstance(input_shape, tuple) or isinstance(input_shape, list)) and len(
+                input_shape) > 1 and axis is not None and (
+                (not isinstance(axis, tuple) and not isinstance(axis, list)) or len(axis) < len(input_shape)):
             if isinstance(axis, tuple) or isinstance(axis, list):
                 self.output_shape = tuple(1 if i in axis else v for i, v in enumerate(input_shape))
             else:
@@ -58,8 +87,11 @@ class ZNormalizer(nn.Module):
                     self.std = (1.0 - ratio) * self.std + ratio * ((v_ref - self.mean) ** 2).mean()
                 else:
                     self.mean = (1.0 - ratio) * self.mean + ratio * v_ref.mean(self.axis).view(self.output_shape)
-                    self.std = (1.0 - ratio) * self.std + ratio * ((v_ref - self.mean) ** 2).mean(self.axis).view(self.output_shape)
+                    self.std = (1.0 - ratio) * self.std + ratio * ((v_ref - self.mean) ** 2).mean(self.axis).view(
+                        self.output_shape)
                 self.disc = self.epsilon + torch.sqrt(self.std)
+            if v.requires_grad:
+                v = BackPropControlFunction.apply(v)
         elif self.disc is None:
             self.disc = self.epsilon + torch.sqrt(self.std)
         return (v - self.mean) / self.disc
@@ -85,13 +117,6 @@ class TanhSiglogZNormalizer(SiglogZNormalizer):
 
 
 class BaseArchi(nn.Module):
-
-    def siglog(self, v):
-        return v.sign() * torch.log(1 + v.abs())
-
-    def sigexp(self, v):
-        sv = v.sign()
-        return sv * (torch.exp(sv * v) - 1)
 
     def activation(self, name):
         if name == 'none':
@@ -144,3 +169,6 @@ class BaseArchi(nn.Module):
 
     def lrelu(self, negative_slope=0.2, in_place=False):
         return nn.LeakyReLU(negative_slope, in_place)
+
+    def backprop_control():
+        return BackPropControlModule()
