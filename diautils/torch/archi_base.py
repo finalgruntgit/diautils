@@ -8,18 +8,22 @@ def siglog(v):
     return v.sign() * torch.log(1 + v.abs())
 
 
+def sigsqrt(v):
+    return v / torch.sqrt(1 + v.abs())
+
+
 def sigexp(v):
     sv = v.sign()
     return sv * (torch.exp(sv * v) - 1)
 
 
-class Flatten(nn.Module):
+class FlattenModule(nn.Module):
 
     def forward(self, input):
         return input.view((input.shape[0], -1))
 
 
-class Reshape(nn.Module):
+class ReshapeModule(nn.Module):
 
     def __init__(self, shape_out):
         super().__init__()
@@ -115,6 +119,48 @@ class TanhSiglogZNormalizer(SiglogZNormalizer):
         return super().forward(v, idx).tanh()
 
 
+class AxisSwapModule(nn.Module):
+
+    def __init__(self, *axis):
+        super().__init__()
+        self.axis = axis
+
+    def forward(self, v):
+        return v.permute(*self.axis)
+
+
+class SumModule(nn.Module):
+
+    def __init__(self, *axis):
+        super().__init__()
+        self.axis = axis
+
+    def forward(self, v):
+        return v.sum(*self.axis)
+
+
+class MeanModule(nn.Module):
+
+    def __init__(self, *axis):
+        super().__init__()
+        self.axis = axis
+
+    def forward(self, v):
+        return v.mean(*self.axis)
+
+
+class SiglogModule(nn.Module):
+
+    def forward(self, v):
+        return siglog(v)
+
+
+class SigsqrtModule(nn.Module):
+
+    def forward(self, v):
+        return sigsqrt(v)
+
+
 class BaseArchi(nn.Module):
 
     def activation(self, name):
@@ -132,10 +178,10 @@ class BaseArchi(nn.Module):
             raise Exception('Unsupported activation function: {}'.format(name))
 
     def flatten(self):
-        return Flatten()
+        return FlattenModule()
 
     def reshape(self, shape_out):
-        return Reshape(shape_out)
+        return ReshapeModule(shape_out)
 
     def znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
         return ZNormalizer(input_shape, axis, beta, epsilon)
@@ -148,6 +194,13 @@ class BaseArchi(nn.Module):
 
     def dense(self, input_size, output_size, bias=True):
         layer = nn.Linear(input_size, output_size, bias)
+        nn.init.xavier_uniform_(layer.weight)
+        if bias:
+            nn.init.zeros_(layer.bias)
+        return layer
+
+    def conv1d(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'):
+        layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
         nn.init.xavier_uniform_(layer.weight)
         if bias:
             nn.init.zeros_(layer.bias)
@@ -171,3 +224,18 @@ class BaseArchi(nn.Module):
 
     def backprop_control(self):
         return BackPropControlModule()
+
+    def swap(self, *axis):
+        return AxisSwapModule(*axis)
+
+    def sum(self, *axis):
+        return SumModule(*axis)
+
+    def mean(self, *axis):
+        return MeanModule(*axis)
+
+    def siglog(self):
+        return SiglogModule()
+
+    def sigsqrt(self):
+        return SigsqrtModule()

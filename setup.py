@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='diautils',
-      version='1.6.2',
+      version='1.6.3',
       description='ML Utils',
       author='Eric Renault',
       author_email='eric.renaul.info@gmail.com',
