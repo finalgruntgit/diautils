@@ -126,6 +126,11 @@ def env(key):
     return os.environ[key]
 
 
+def setenv(key, value):
+    os.environ[key] = value
+    return value
+
+
 def cwd():
     return os.getcwd()
 

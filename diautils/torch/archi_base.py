@@ -112,11 +112,21 @@ class SiglogZNormalizer(ZNormalizer):
 
 class TanhSiglogZNormalizer(SiglogZNormalizer):
 
-    def __init__(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
+    def __init__(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12, alpha=1.0):
         super().__init__(input_shape, axis, beta, epsilon)
+        self.alpha = alpha
 
     def forward(self, v, idx=None):
-        return super().forward(v, idx).tanh()
+        return (self.alpha * super().forward(v, idx)).tanh()
+
+
+class BinaryNormalizer(TanhSiglogZNormalizer):
+
+    def __init__(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12, alpha=1.0):
+        super().__init__(input_shape, axis, beta, epsilon, alpha)
+
+    def forward(self, v, idx=None):
+        return 0.5 * (1.0 + super().forward(v, idx))
 
 
 class AxisSwapModule(nn.Module):
@@ -189,8 +199,11 @@ class BaseArchi(nn.Module):
     def siglog_znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
         return SiglogZNormalizer(input_shape, axis, beta, epsilon)
 
-    def tanh_siglog_znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12):
-        return TanhSiglogZNormalizer(input_shape, axis, beta, epsilon)
+    def tanh_siglog_znorm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12, alpha=1.0):
+        return TanhSiglogZNormalizer(input_shape, axis, beta, epsilon, alpha)
+
+    def binary_norm(self, input_shape=None, axis=None, beta=1e-6, epsilon=1e-12, alpha=1.0):
+        return BinaryNormalizer(input_shape, axis, beta, epsilon, alpha)
 
     def dense(self, input_size, output_size, bias=True):
         layer = nn.Linear(input_size, output_size, bias)
