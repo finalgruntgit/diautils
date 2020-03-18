@@ -20,7 +20,7 @@ def sigexp(v):
 class FlattenModule(nn.Module):
 
     def forward(self, input):
-        return input.view((input.shape[0], -1))
+        return input.reshape((input.shape[0], -1))
 
 
 class ReshapeModule(nn.Module):
@@ -48,6 +48,21 @@ class BackPropControlModule(nn.Module):
 
     def forward(self, v):
         return BackPropControlFunction.apply(v)
+
+
+class SortModule(nn.Module):
+
+    def __init__(self, shape_in, shape_sort=None, axis=-1):
+        super().__init__()
+        self.shape_in = shape_in
+        self.shape_sort = shape_sort
+        self.axis = axis
+
+    def forward(self, v):
+        if self.shape_sort is None:
+            return v.sort(self.axis)
+        else:
+            return v.view(self.shape_sort).sort(self.axis)[0].view(self.shape_in)
 
 
 class ZNormalizer(nn.Module):
@@ -92,12 +107,12 @@ class ZNormalizer(nn.Module):
                     self.mean = (1.0 - ratio) * self.mean + ratio * v_ref.mean(self.axis).view(self.output_shape)
                     self.std = (1.0 - ratio) * self.std + ratio * ((v_ref - self.mean) ** 2).mean(self.axis).view(
                         self.output_shape)
-                self.disc = self.epsilon + torch.sqrt(self.std)
+                self.disc = 1.0 / (self.epsilon + torch.sqrt(self.std))
             if v.requires_grad:
                 v = BackPropControlFunction.apply(v)
         elif self.disc is None:
-            self.disc = self.epsilon + torch.sqrt(self.std)
-        return (v - self.mean) / self.disc
+            self.disc = 1.0 / (self.epsilon + torch.sqrt(self.std))
+        return (v - self.mean) * self.disc
 
 
 class SiglogZNormalizer(ZNormalizer):
@@ -141,22 +156,42 @@ class AxisSwapModule(nn.Module):
 
 class SumModule(nn.Module):
 
-    def __init__(self, *axis):
+    def __init__(self, *axis, keepdim=False):
         super().__init__()
         self.axis = axis
+        self.keepdim = keepdim
 
     def forward(self, v):
-        return v.sum(*self.axis)
+        sum = v.sum(self.axis)
+        if self.keepdim:
+            dims = list(v.shape)
+            if isinstance(self.axis, list) or isinstance(self.axis, tuple):
+                for ax in self.axis:
+                    dims[ax] = 1
+            else:
+                dims[self.axis] = 1
+            sum = sum.view(dims)
+        return sum
 
 
 class MeanModule(nn.Module):
 
-    def __init__(self, *axis):
+    def __init__(self, *axis, keepdim=False):
         super().__init__()
         self.axis = axis
+        self.keepdim = keepdim
 
     def forward(self, v):
-        return v.mean(*self.axis)
+        mean = v.mean(self.axis)
+        if self.keepdim:
+            dims = list(v.shape)
+            if isinstance(self.axis, list) or isinstance(self.axis, tuple):
+                for ax in self.axis:
+                    dims[ax] = 1
+            else:
+                dims[self.axis] = 1
+            mean = mean.view(dims)
+        return mean
 
 
 class SiglogModule(nn.Module):
@@ -171,7 +206,58 @@ class SigsqrtModule(nn.Module):
         return sigsqrt(v)
 
 
+class SigmoidModule(nn.Module):
+
+    def forward(self, v):
+        return v.sigmoid()
+
+
+class SoftmaxModule(nn.Module):
+
+    def __init__(self, axis):
+        super().__init__()
+        self.axis = axis
+
+    def forward(self, v):
+        return v.softmax(self.axis)
+
+
+class L2NormalizerModule(nn.Module):
+
+    def __init__(self, coef=1.0):
+        super().__init__()
+        self.coef = coef
+        self.v = None
+
+    def normalize(self, retain_graph=True):
+        if self.v is not None:
+            loss = (self.v ** 2).mean() * self.coef
+            loss.backward(retain_graph=retain_graph)
+            return loss
+        else:
+            return None
+
+    def forward(self, v):
+        self.v = v
+        return v
+
+
 class BaseArchi(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.l2_norms = []
+
+    def add_l2_norm(self):
+        l2norm = L2NormalizerModule()
+        self.l2_norms.append(l2norm)
+        return l2norm
+
+    def backward_l2_norms(self, retain_graph=True):
+        losses = []
+        for norm in self.l2_norms:
+            losses.append(norm.normalize(retain_graph))
+        return losses
 
     def activation(self, name):
         if name == 'none':
@@ -219,6 +305,20 @@ class BaseArchi(nn.Module):
             nn.init.zeros_(layer.bias)
         return layer
 
+    def conv2d(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'):
+        layer = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
+        nn.init.xavier_uniform_(layer.weight)
+        if bias:
+            nn.init.zeros_(layer.bias)
+        return layer
+
+    def deconv2d(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', output_padding=0):
+        layer = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, output_padding, groups, bias, dilation, padding_mode)
+        nn.init.xavier_uniform_(layer.weight)
+        if bias:
+            nn.init.zeros_(layer.bias)
+        return layer
+
     def embedding(self, num_class, embedding_size):
         embedding = nn.Embedding(num_class, embedding_size)
         nn.init.xavier_uniform_(embedding.weight)
@@ -241,14 +341,23 @@ class BaseArchi(nn.Module):
     def swap(self, *axis):
         return AxisSwapModule(*axis)
 
-    def sum(self, *axis):
-        return SumModule(*axis)
+    def sum(self, *axis, keepdim=False):
+        return SumModule(*axis, keepdim=keepdim)
 
-    def mean(self, *axis):
-        return MeanModule(*axis)
+    def mean(self, *axis, keepdim=False):
+        return MeanModule(*axis, keepdim=keepdim)
 
     def siglog(self):
         return SiglogModule()
 
     def sigsqrt(self):
         return SigsqrtModule()
+
+    def sigmoid(self):
+        return SigmoidModule()
+
+    def softmax(self, axis):
+        return SoftmaxModule(axis)
+
+    def sort(self, shape_in, shape_sort=None, axis=-1):
+        return SortModule(shape_in, shape_sort, axis)

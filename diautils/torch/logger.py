@@ -18,6 +18,12 @@ class TorchLogger:
         self.writer.add_image(tag, value, step, dataformats='HWC')
         return self
 
+    def log_images(self, tag, values, step):
+        num_img = len(values)
+
+        self.writer.add_image(tag, value, step, dataformats='HWC')
+        return self
+
     def log_plot(self, tag, step):
         return self.log_image(tag, plot_to_img_np(), step)
 
