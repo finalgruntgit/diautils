@@ -78,16 +78,19 @@ class ZNormalizer(nn.Module):
                 self.output_shape = tuple(1 if i in axis else v for i, v in enumerate(input_shape))
             else:
                 self.output_shape = tuple(1 if i == axis else v for i, v in enumerate(input_shape))
+            self.output_shape = tuple(-1 if v is None else v for v in self.output_shape)
+            self.param_shape = tuple(1 if (v is None or v == -1) else v for v in self.output_shape)
         else:
             self.output_shape = 1
+            self.param_shape = 1
         self.beta = beta
         self.epsilon = epsilon
-        if self.output_shape == 1:
+        if self.param_shape == 1:
             self.register_buffer('mean', torch.tensor(0.0))
             self.register_buffer('std', torch.tensor(1.0))
         else:
-            self.register_buffer('mean', torch.zeros(self.output_shape))
-            self.register_buffer('std', torch.ones(self.output_shape))
+            self.register_buffer('mean', torch.zeros(self.param_shape))
+            self.register_buffer('std', torch.ones(self.param_shape))
         self.register_buffer('beta_power', torch.tensor(1.0).double())
         self.disc = None
 
@@ -229,9 +232,9 @@ class L2NormalizerModule(nn.Module):
         self.coef = coef
         self.v = None
 
-    def normalize(self, retain_graph=True):
+    def normalize(self, coef=1.0, retain_graph=True):
         if self.v is not None:
-            loss = (self.v ** 2).mean() * self.coef
+            loss = (self.v ** 2).mean() * (self.coef * coef)
             loss.backward(retain_graph=retain_graph)
             return loss
         else:
@@ -248,15 +251,15 @@ class BaseArchi(nn.Module):
         super().__init__()
         self.l2_norms = []
 
-    def add_l2_norm(self):
-        l2norm = L2NormalizerModule()
+    def add_l2_norm(self, coef=1.0):
+        l2norm = L2NormalizerModule(coef)
         self.l2_norms.append(l2norm)
         return l2norm
 
-    def backward_l2_norms(self, retain_graph=True):
+    def backward_l2_norms(self, coef=1.0, retain_graph=True):
         losses = []
         for norm in self.l2_norms:
-            losses.append(norm.normalize(retain_graph))
+            losses.append(norm.normalize(coef, retain_graph))
         return losses
 
     def activation(self, name):
@@ -335,6 +338,9 @@ class BaseArchi(nn.Module):
     def lrelu(self, negative_slope=0.2, in_place=False):
         return nn.LeakyReLU(negative_slope, in_place)
 
+    def tanh(self):
+        return nn.Tanh()
+
     def backprop_control(self):
         return BackPropControlModule()
 
@@ -361,3 +367,9 @@ class BaseArchi(nn.Module):
 
     def sort(self, shape_in, shape_sort=None, axis=-1):
         return SortModule(shape_in, shape_sort, axis)
+
+    def set_active(self, prefix, active=True):
+        for name, param in self.named_parameters():
+            if name.startswith(prefix):
+                param.requires_grad = active
+        return self

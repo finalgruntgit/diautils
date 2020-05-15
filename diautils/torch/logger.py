@@ -1,5 +1,6 @@
 from diautils.plot import *
 from torch.utils.tensorboard import SummaryWriter
+import torch
 
 class TorchLogger:
 
@@ -18,10 +19,8 @@ class TorchLogger:
         self.writer.add_image(tag, value, step, dataformats='HWC')
         return self
 
-    def log_images(self, tag, values, step):
-        num_img = len(values)
-
-        self.writer.add_image(tag, value, step, dataformats='HWC')
+    def log_pack_images(self, tag, values, step, cols=None, bg=None):
+        self.writer.add_image(tag, torch.from_numpy(pack_imgs(values.detach().cpu().numpy(), cols, bg)), step, dataformats='HWC')
         return self
 
     def log_plot(self, tag, step):

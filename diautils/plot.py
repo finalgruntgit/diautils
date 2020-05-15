@@ -19,6 +19,10 @@ def plot_fs():
     plt.show()
 
 
+def plot_imgs(imgs, cols=None, bg=None):
+    plt.imshow(pack_imgs(imgs, cols, bg))
+
+
 def plot_save(filename, close=True):
     plt.savefig(filename)
     if close:
@@ -177,3 +181,22 @@ def create_graph_layout(nodes, edges, directed=True, type='spring', pos=None, it
             raise Exception('Unknown graph layout type: {}'.format(type))
     return GraphLayout(g, pos, nodes, edges, node_labels, node_cmap, node_size_min, node_size_max, node_linewidth, edge_cmap, edge_linewidth, show_arrows, has_edge_border, variable_edge_width)
 
+
+def pack_imgs(imgs, cols=None, bg=None):
+    w = imgs.shape[2]
+    h = imgs.shape[1]
+    if cols is None:
+        cols = int(np.ceil(np.sqrt(len(imgs) * h * w) / w))
+    rows = int(np.ceil(len(imgs) / cols))
+    buf = np.zeros((rows * h, cols * w, imgs.shape[3]), dtype=imgs.dtype)
+    if bg is not None:
+        buf[:, :] = bg
+    col = 0
+    row = 0
+    for img in imgs:
+        buf[h * row: h * (row + 1), w * col:w * (col + 1)] = img
+        col += 1
+        if col == cols:
+            col = 0
+            row += 1
+    return buf

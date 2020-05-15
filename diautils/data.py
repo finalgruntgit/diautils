@@ -138,7 +138,8 @@ def ds_create_from(name, data, dtype=None, dir='', meta_suffix='meta', mode='w+'
 class DatasetType(help.NamedEnum):
     TRAIN = 0,
     TEST = 1,
-    RAW = 2
+    RAW = 2,
+    VALID = 3
 
 
 class DatasetManager:

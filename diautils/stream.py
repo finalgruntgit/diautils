@@ -8,7 +8,9 @@ from diautils import help
 
 
 def pipe(data):
-    if callable(data):
+    if type(data) in (int, np.int, np.uint, np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64):
+        return StreamNode(IterablePipe(np.arange(data)))
+    elif callable(data):
         return StreamNode(CallableDataPipe(data))
     elif help.is_arraylike(data) and not isinstance(data, range):
         return StreamNode(ArrayPipe(data))
